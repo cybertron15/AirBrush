@@ -6,21 +6,21 @@ import HT_Module as htm
 
 capture = cv.VideoCapture(0)
 UI_components = UIC.load_UI_components("Images")
-tracker = htm.Hand_Tracker(detetctionCon=0.85)
-
+tracker = htm.Hand_Tracker(detetctionCon=0.85,trackingCon=0.7)
+disabled_buttons = ["brushbuttonon","eraserbuttonon"]
 # video Loop
 while True:
     _,img = capture.read() # reading image from wecam stream
     img = cv.flip(img,1) # flipping the image
     RGB_image = cv.cvtColor(img,cv.COLOR_BGR2RGB)
-    hands = tracker.get_hands(RGB_image,img,draw_hands=False)
+    hands = tracker.get_hands(RGB_image,img,draw_hands=True)
     landmarks = tracker.find_positions(hands,draw=False)
     
     #looping through UI components dict
     for keys,values in UI_components.items():
 
         #skipping if we have the mentioned componenets
-        if keys in ["brushbuttonon","eraserbuttonon"]:
+        if keys in disabled_buttons:
             continue
 
         resized = values[2]
@@ -55,8 +55,19 @@ while True:
             
         if fingers[1] and fingers[2]:
             cv.putText(img,"Selection mode",(10,470),cv.FONT_HERSHEY_PLAIN,1.2,(255,225,255),2)
-            cv.circle(img,(x2+10,y2+10),10,(10,155,210),-1)
+            dist = np.hypot(x2-x1,y2-y1)
+            cv.circle(img,(x2,y2),5,(10,20,210),2)
             
+            # print(UI_components["eraserbuttonon"][1])
+            # print(UI_components["eraserbuttonon"][0].shape)
+
+            if 5+56>x2>5 and 150+49>y2>150:
+                disabled_buttons[0] = "brushbuttonoff"
+                disabled_buttons[1] = "eraserbuttonon"
+            
+            if 5+56>x2>5 and 210+49>y2>210:
+                disabled_buttons[0] = "brushbuttonon"
+                disabled_buttons[1] = "eraserbuttonoff"
         
     
     cv.imshow("img",img)
