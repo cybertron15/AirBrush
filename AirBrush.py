@@ -1,15 +1,21 @@
 import cv2 as cv
 import os
+import numpy as np
 import UI_components as UIC
+import HT_Module as htm
 
 capture = cv.VideoCapture(0)
 UI_components = UIC.load_UI_components("Images")
+tracker = htm.Hand_Tracker(detetctionCon=0.85)
 
 # video Loop
 while True:
     _,img = capture.read() # reading image from wecam stream
     img = cv.flip(img,1) # flipping the image
-
+    RGB_image = cv.cvtColor(img,cv.COLOR_BGR2RGB)
+    hands = tracker.get_hands(RGB_image,img,draw_hands=False)
+    landmarks = tracker.find_positions(hands,draw=False)
+    
     #looping through UI components dict
     for keys,values in UI_components.items():
 
@@ -33,8 +39,26 @@ while True:
 
         # adding both the images and placeing it on the exact same place where we took ROI from
         img[y_pos:y_pos+height , x_pos:x_pos+width] = cv.add(masked_componenet,masked_roi)
-        
+    
 
+    if landmarks:
+        fingers = tracker.count_fingers()
+        x1,y1 = landmarks[12][1],landmarks[12][2]
+        x2,y2 = landmarks[8][1],landmarks[8][2]
+
+        dist = np.hypot(x2-x1,y2-y1)
+        
+        if fingers[1] and not fingers[2]:
+            cv.putText(img,"Draw mode",(10,470),cv.FONT_HERSHEY_PLAIN,1.2,(255,225,255),2)
+            cv.circle(img,(x2,y2),5,(130,255,110),-1)
+
+            
+        if fingers[1] and fingers[2]:
+            cv.putText(img,"Selection mode",(10,470),cv.FONT_HERSHEY_PLAIN,1.2,(255,225,255),2)
+            cv.circle(img,(x2+10,y2+10),10,(10,155,210),-1)
+            
+        
+    
     cv.imshow("img",img)
 
     if cv.waitKey(1) == ord('q'):
