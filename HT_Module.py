@@ -31,18 +31,18 @@ class Hand_Tracker():
     def find_positions(self, img, multipleHands=True, handNo=0, draw=True):
         """gets the indivisual points present of the hand"""
         # creating a landmark list to store the landmarks
-        landmark_list = []
+        self.landmark_list = []
         if self.results.multi_hand_landmarks:
             if multipleHands:
                 # detects points on multiple hands
                 for handLms in self.results.multi_hand_landmarks:
-                    self._get_landmarks(handLms,img,landmark_list,draw)
+                    self._get_landmarks(handLms,img,self.landmark_list,draw)
             else:
                 # detects points on single hand at a time
                 handLms = self.results.multi_hand_landmarks[handNo]
-                self._get_landmarks(handLms,img,landmark_list,draw)
+                self._get_landmarks(handLms,img,self.landmark_list,draw)
         
-        return landmark_list
+        return self.landmark_list
     
     
     def _get_landmarks(self,hand_landmarks,img,landmark_list,draw):
@@ -59,6 +59,36 @@ class Hand_Tracker():
                     # draws on individual points
                     cv.circle(img,(cx,cy),15,(255,255,0),-1)
 
+    def count_fingers(self):
+        """counts how many fingers are raised and returns a list of length 5
+        where each element of the list corosponds to the fingers of right hand.
+        it strats with the thumb and ends with pinkie. for raised finger the 
+        value will be 1 else it will be 0"""
+        fingers = []
+
+        # checking thumb
+        if self.landmark_list[4][1]>self.landmark_list[3][1]:
+            fingers.append(1) #apeending 1 to fingers list if 
+        else:
+            fingers.append(0)
+
+        # checking fingers
+        for i in range(1,5):
+            tips = 4*(i+1) # tips are in multiples of four so we use this logic to get each tip
+            joints = tips-2 # join landmark will be always 2 positions before tip landmark of any finger
+
+            #getting the coordinates of the landmarks we need
+            y_tip = self.landmark_list[tips][2]
+            y_joint = self.landmark_list[joints][2]
+
+            # checking if y_tip is greater then y_joints which indicates the tip is below the joint
+            # this means the finger is closed
+            if y_tip>y_joint:
+                fingers.append(0)
+            else:
+                fingers.append(1)
+
+        return fingers
 
 def main():
     capture = cv.VideoCapture(0)
