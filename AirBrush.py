@@ -5,15 +5,20 @@ import UI_components as UIC
 import HT_Module as htm
 
 capture = cv.VideoCapture(0)
+frameW,frameH = int(capture.get(3)),int(capture.get(4))
+
 UI_components = UIC.load_UI_components("Images")
 tracker = htm.Hand_Tracker(detetctionCon=0.85,trackingCon=0.7)
 disabled_buttons = ["brushbuttonon","eraserbuttonon"]
+canvas = np.zeros((frameH,frameW,3),np.uint8)
+xp,yp=0,0
+
 # video Loop
 while True:
     _,img = capture.read() # reading image from wecam stream
     img = cv.flip(img,1) # flipping the image
     RGB_image = cv.cvtColor(img,cv.COLOR_BGR2RGB)
-    hands = tracker.get_hands(RGB_image,img,draw_hands=True)
+    hands = tracker.get_hands(RGB_image,img,draw_hands=False)
     landmarks = tracker.find_positions(hands,draw=False)
     
     #looping through UI components dict
@@ -46,21 +51,36 @@ while True:
         x1,y1 = landmarks[12][1],landmarks[12][2]
         x2,y2 = landmarks[8][1],landmarks[8][2]
 
-        dist = np.hypot(x2-x1,y2-y1)
         
-        if fingers[1] and not fingers[2]:
+        # adjusting diffrent modes
+        if fingers[1] and not fingers[2]:# if only index finger is up and middle is down
             cv.putText(img,"Draw mode",(10,470),cv.FONT_HERSHEY_PLAIN,1.2,(255,225,255),2)
             cv.circle(img,(x2,y2),5,(130,255,110),-1)
-
             
-        if fingers[1] and fingers[2]:
+            # to prevent the line from starting from thr top right corner
+            if xp==0 and yp == 0:
+                xp,yp=x2,y2
+            
+            #drawing
+            if "brushbuttonoff" in disabled_buttons:
+                cv.line(canvas,(xp,yp),(x2,y2),(50,25,110),10)
+
+            #ereasing
+            if "eraserbuttonoff" in disabled_buttons:
+                cv.line(canvas,(xp,yp),(x2,y2),(0,0,0),50)
+            
+            xp,yp=x2,y2
+            
+
+        if fingers[1] and fingers[2]: #if index and middle both fingers are up
+            #resetting the drawing position
+            xp,yp = 0,0
+
+            # Displaying Selection mode on screen
             cv.putText(img,"Selection mode",(10,470),cv.FONT_HERSHEY_PLAIN,1.2,(255,225,255),2)
-            dist = np.hypot(x2-x1,y2-y1)
             cv.circle(img,(x2,y2),5,(10,20,210),2)
-            
-            # print(UI_components["eraserbuttonon"][1])
-            # print(UI_components["eraserbuttonon"][0].shape)
 
+            #selecting buttons
             if 5+56>x2>5 and 150+49>y2>150:
                 disabled_buttons[0] = "brushbuttonoff"
                 disabled_buttons[1] = "eraserbuttonon"
@@ -69,8 +89,15 @@ while True:
                 disabled_buttons[0] = "brushbuttonon"
                 disabled_buttons[1] = "eraserbuttonoff"
         
-    
+    #drawing on screen
+    gray_canvas = cv.cvtColor(canvas,cv.COLOR_BGR2GRAY)
+    _, inv_canvas_tresh = cv.threshold(gray_canvas,50,255,cv.THRESH_BINARY_INV)
+    inv_canvas_tresh = cv.cvtColor(inv_canvas_tresh,cv.COLOR_GRAY2BGR)
+    img = cv.bitwise_and(img,inv_canvas_tresh)
+    img = cv.bitwise_or(img,canvas)
+
     cv.imshow("img",img)
+    # cv.imshow("canvas",canvas)
 
     if cv.waitKey(1) == ord('q'):
             break
