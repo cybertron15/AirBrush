@@ -9,7 +9,7 @@ frameW,frameH = int(capture.get(3)),int(capture.get(4))
 
 UI_components = UIC.load_UI_components("Images")
 tracker = htm.Hand_Tracker(detetctionCon=0.85,trackingCon=0.7)
-disabled_buttons = ["brushbuttonon","eraserbuttonon"]
+disabled_buttons = ["brushbuttonon","eraserbuttonon","numrecogon"]
 canvas = np.zeros((frameH,frameW,3),np.uint8)
 xp,yp=0,0
 
@@ -81,17 +81,29 @@ while True:
             cv.circle(img,(x2,y2),5,(10,20,210),2)
 
             #selecting buttons
-            if 5+56>x2>5 and 150+49>y2>150:
+            if 5+56>x2>5 and 150+49>y2>150: # selecting brush button
                 disabled_buttons[0] = "brushbuttonoff"
                 disabled_buttons[1] = "eraserbuttonon"
+                disabled_buttons[2] = "numrecogon"
             
-            if 5+56>x2>5 and 210+49>y2>210:
+            if 5+56>x2>5 and 210+49>y2>210: #selecting eraser button
                 disabled_buttons[0] = "brushbuttonon"
                 disabled_buttons[1] = "eraserbuttonoff"
+                disabled_buttons[2] = "numrecogon"
+            
+            if 5+56>x2>5 and 270+49>y2>270: #selecting eraser button
+                disabled_buttons[0] = "brushbuttonon"
+                disabled_buttons[1] = "eraserbuttonon"
+                disabled_buttons[2] = "numrecogoff"
+
+                # scan_ROI = 
+
+
         
     #drawing on screen
     gray_canvas = cv.cvtColor(canvas,cv.COLOR_BGR2GRAY)
     _, inv_canvas_tresh = cv.threshold(gray_canvas,50,255,cv.THRESH_BINARY_INV)
+    cv.imshow("can",inv_canvas_tresh)
     inv_canvas_tresh = cv.cvtColor(inv_canvas_tresh,cv.COLOR_GRAY2BGR)
     img = cv.bitwise_and(img,inv_canvas_tresh)
     img = cv.bitwise_or(img,canvas)

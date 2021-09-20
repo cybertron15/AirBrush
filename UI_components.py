@@ -16,8 +16,8 @@ def load_UI_components(component_folder_path):
     to the UI componenets name in a dictionary"""
 
     UI_componenets_paths = os.listdir(component_folder_path)
-    UI_componenets_positions = [[5,150],[5,150],[5,210],[5,210],[0,0]]
-    resizeable_components = [(),(),(),(),(640,40)]
+    UI_componenets_positions = [[5,150],[5,150],[5,210],[5,210],[0,0],[5,270],[5,270]]
+    resizeable_components = [(),(),(),(),(640,40),(),()]
 
     UI_components = {}
     for index, paths in enumerate(UI_componenets_paths):
