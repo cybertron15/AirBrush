@@ -9,9 +9,13 @@ frameW,frameH = int(capture.get(3)),int(capture.get(4))
 
 UI_components = UIC.load_UI_components("Images")
 tracker = htm.Hand_Tracker(detetctionCon=0.85,trackingCon=0.7)
-disabled_buttons = ["brushbuttonon","eraserbuttonon","numrecogon"]
+disabled_buttons = ["brushbuttonon","eraserbuttonon","numrecogon","clearon"]
 canvas = np.zeros((frameH,frameW,3),np.uint8)
 xp,yp=0,0
+
+start,end = [],[]
+scan = []
+scanned_can = None
 
 # video Loop
 while True:
@@ -64,6 +68,9 @@ while True:
             #drawing
             if "brushbuttonoff" in disabled_buttons:
                 cv.line(canvas,(xp,yp),(x2,y2),(50,25,110),10)
+                if not start:
+                    start.append(x2)
+                    start.append(y2)
 
             #ereasing
             if "eraserbuttonoff" in disabled_buttons:
@@ -73,6 +80,15 @@ while True:
             
 
         if fingers[1] and fingers[2]: #if index and middle both fingers are up
+
+            if start and not end:
+                end.append(x2)
+                end.append(y2)
+                scan.append([start,end])
+                start = []
+                end = []
+
+
             #resetting the drawing position
             xp,yp = 0,0
 
@@ -85,25 +101,42 @@ while True:
                 disabled_buttons[0] = "brushbuttonoff"
                 disabled_buttons[1] = "eraserbuttonon"
                 disabled_buttons[2] = "numrecogon"
+                disabled_buttons[3] = "clearon"
             
             if 5+56>x2>5 and 210+49>y2>210: #selecting eraser button
                 disabled_buttons[0] = "brushbuttonon"
                 disabled_buttons[1] = "eraserbuttonoff"
                 disabled_buttons[2] = "numrecogon"
+                disabled_buttons[3] = "clearon"
             
-            if 5+56>x2>5 and 270+49>y2>270: #selecting eraser button
+            if 5+56>x2>5 and 270+49>y2>270: #selecting Number recogniser button
                 disabled_buttons[0] = "brushbuttonon"
                 disabled_buttons[1] = "eraserbuttonon"
                 disabled_buttons[2] = "numrecogoff"
+                disabled_buttons[3] = "clearon"
 
-                # scan_ROI = 
+            if 5+56>x2>5 and 330+49>y2>330: #selecting clear screen button
+                disabled_buttons[0] = "brushbuttonon"
+                disabled_buttons[1] = "eraserbuttonon"
+                disabled_buttons[2] = "numrecogon"
+                disabled_buttons[3] = "clearoff"
 
+                canvas = np.zeros((frameH,frameW,3),np.uint8) #this will clear the screen
 
         
     #drawing on screen
     gray_canvas = cv.cvtColor(canvas,cv.COLOR_BGR2GRAY)
     _, inv_canvas_tresh = cv.threshold(gray_canvas,50,255,cv.THRESH_BINARY_INV)
-    cv.imshow("can",inv_canvas_tresh)
+    # cv.imshow("can",inv_canvas_tresh)
+    if scan:
+        print(scan)
+        for index, coordinates in enumerate(scan):
+            x1,x2 = coordinates[0][0], coordinates[1][0]
+            y1,y2 = coordinates[0][1], coordinates[1][1]
+            print(y1,y2)
+            print(x1,x2)
+            cv.imshow(f"{index}",inv_canvas_tresh[y1:y2,x1:x2])
+
     inv_canvas_tresh = cv.cvtColor(inv_canvas_tresh,cv.COLOR_GRAY2BGR)
     img = cv.bitwise_and(img,inv_canvas_tresh)
     img = cv.bitwise_or(img,canvas)
@@ -112,5 +145,5 @@ while True:
     # cv.imshow("canvas",canvas)
 
     if cv.waitKey(1) == ord('q'):
-            break
+        break
 
