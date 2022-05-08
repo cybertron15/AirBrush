@@ -11,7 +11,11 @@ class Hand_Tracker():
         self.trackingCon=trackingCon
 
         self.mpHands = mp.solutions.hands
-        self.hands = self.mpHands.Hands(self.mode,self.max_hands,self.detetctionCon,self.trackingCon)
+        self.hands = self.mpHands.Hands(
+            static_image_mode=self.mode,
+            max_num_hands=self.max_hands,
+            min_detection_confidence=self.detetctionCon,
+            min_tracking_confidence=self.trackingCon)
         self.mpDraw = mp.solutions.drawing_utils
 
     
@@ -108,9 +112,9 @@ def main():
         previous_time = current_time
 
         img = tracker.get_hands(RGB_img,img,True)
-        landmarks = tracker.find_positions(img,draw=True)
-        if len(landmarks)!=0:
-            print(landmarks[4])
+        landmarks = tracker.find_positions(img,draw=False)
+        # if len(landmarks)!=0:
+            # print(landmarks[4])
     
         # fliping the image so it doesn't get displayed inverted
         img = cv.flip(img,1)
